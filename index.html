@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Claude Interface - Fully Functional</title>
     <script src="https://js.puter.com/v2/"></script>
+    <!--
+    改动说明：
+    1. 新增函数：fetchPuterModels(), getCachedModels(), setCachedModels(), openModelModal(), closeModelModal(), filterModels()
+    2. 修改函数：initializeInterface() - 添加模型拉取和文件上传初始化
+    3. 修改函数：sendMessage() - 增强多模态内容处理
+    4. DOM插入：在 .search-actions 中插入 "+" 按钮和隐藏的 file input
+    5. DOM插入：页面末尾添加模型选择弹窗 modal
+    6. 新增全局变量：pendingFiles[], isUploadingFiles
+    -->
     <style>
         * {
             margin: 0;
@@ -661,6 +670,115 @@
             cursor: not-allowed;
         }
 
+        /* Model selection modal */
+        .model-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .model-modal.active {
+            display: flex;
+        }
+
+        .model-modal-content {
+            background: #262626;
+            border: 1px solid #404040;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .model-modal h2 {
+            color: #fff;
+            margin-bottom: 16px;
+            font-size: 20px;
+        }
+
+        .model-search {
+            width: 100%;
+            padding: 10px 12px;
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .model-search:focus {
+            outline: none;
+            border-color: #ff6b35;
+        }
+
+        .model-list {
+            flex: 1;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #404040 #262626;
+        }
+
+        .model-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .model-list::-webkit-scrollbar-track {
+            background: #262626;
+        }
+
+        .model-list::-webkit-scrollbar-thumb {
+            background: #404040;
+            border-radius: 3px;
+        }
+
+        .model-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .model-item:hover {
+            background: #2a2a2a;
+            border-color: #555;
+        }
+
+        .model-item.selected {
+            background: #ff6b35;
+            border-color: #ff6b35;
+        }
+
+        .model-item-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .model-item.selected .model-item-name {
+            color: #fff;
+        }
+
+        .model-item-id {
+            font-size: 12px;
+            color: #808080;
+        }
+
+        .model-item.selected .model-item-id {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 width: 240px;
@@ -762,6 +880,15 @@
         </div>
     </div>
 
+    <!-- Model Selection Modal -->
+    <div class="model-modal" id="modelModal">
+        <div class="model-modal-content">
+            <h2>Select Model</h2>
+            <input type="text" class="model-search" id="modelSearch" placeholder="Search models..." />
+            <div class="model-list" id="modelList"></div>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar">
@@ -837,8 +964,10 @@
                     <div class="search-container">
                         <textarea class="search-input" id="welcomeInput" placeholder="How can I help you today?" rows="1"></textarea>
                         <div class="search-actions">
-                            <input type="file" id="welcomeFileInput" style="display:none" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.csv,.json,.xml,.html,.htm,.css,.js,.zip,.rar,.7z">
-                            <button class="model-btn" id="welcomeFileBtn" style="padding: 6px 8px; font-size: 18px;" title="Attach files">+</button>
+                            <button class="model-btn" id="uploadBtnWelcome" title="Upload files">
+                                <span style="font-size: 16px;">+</span>
+                            </button>
+                            <input type="file" id="fileInputWelcome" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.csv,.json,.xml,.html,.htm,.css,.js,.zip,.rar,.7z" style="display: none;" />
                             <button class="send-btn" id="sendBtn">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -917,8 +1046,10 @@
                     <div class="search-container">
                         <textarea class="search-input" id="chatInput" placeholder="Message Claude..." rows="1"></textarea>
                         <div class="search-actions">
-                            <input type="file" id="chatFileInput" style="display:none" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.csv,.json,.xml,.html,.htm,.css,.js,.zip,.rar,.7z">
-                            <button class="model-btn" id="chatFileBtn" style="padding: 6px 8px; font-size: 18px;" title="Attach files">+</button>
+                            <button class="model-btn" id="uploadBtnChat" title="Upload files">
+                                <span style="font-size: 16px;">+</span>
+                            </button>
+                            <input type="file" id="fileInputChat" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.csv,.json,.xml,.html,.htm,.css,.js,.zip,.rar,.7z" style="display: none;" />
                             <button class="model-btn" id="chatModelSelector" style="padding: 6px 8px; font-size: 12px;">
                                 <span id="chatCurrentModel">Sonnet 4</span>
                             </button>
@@ -937,9 +1068,9 @@
     <script>
         // Global state
         let availableModels = [
-            { apiName: 'claude-sonnet-4-5-20250929', displayName: 'Claude Sonnet 4.5', shortName: 'Sonnet 4.5' },
-            { apiName: 'claude-sonnet-4-20250514', displayName: 'Claude Sonnet 4', shortName: 'Sonnet 4' },
-            { apiName: 'claude-opus-4-20250514', displayName: 'Claude Opus 4', shortName: 'Opus 4' }
+            { apiName: 'claude-sonnet-4', displayName: 'Claude Sonnet 4', shortName: 'Sonnet 4' },
+            { apiName: 'claude-opus-4', displayName: 'Claude Opus 4', shortName: 'Opus 4' },
+            { apiName: 'claude-3-7-sonnet', displayName: 'Claude 3.7 Sonnet', shortName: 'Sonnet 3.7' }
         ];
         let currentModel = availableModels[0].apiName;
         let chatHistory = [];
@@ -949,6 +1080,7 @@
         let userName = '';
         let isAuthenticated = false;
         let pendingFiles = [];
+        let isUploadingFiles = false;
 
         const UC_STORAGE_KEY = 'unlimitedClaude.state.v1';
         const USER_NAME_KEY = 'unlimitedClaude.userName';
@@ -961,90 +1093,169 @@
             try {
                 console.log('🔄 Fetching Puter models...');
                 
-                // Check cache first
-                const cached = localStorage.getItem(MODELS_CACHE_KEY);
-                if (cached) {
-                    const { data, timestamp } = JSON.parse(cached);
-                    if (Date.now() - timestamp < MODELS_CACHE_DURATION) {
-                        console.log('✅ Using cached models');
-                        availableModels = data;
-                        return;
-                    }
-                }
-
-                let models = [];
-                
                 // Try Puter SDK first
-                if (typeof puter !== 'undefined' && puter.ai && puter.ai.models && typeof puter.ai.models.list === 'function') {
+                if (typeof puter !== 'undefined' && puter.ai && puter.ai.models && puter.ai.models.list) {
                     try {
-                        const response = await puter.ai.models.list();
-                        if (Array.isArray(response)) {
-                            models = response.map(m => ({
-                                apiName: m.id || m.name || m,
-                                displayName: formatModelName(m.id || m.name || m),
-                                shortName: getShortName(m.id || m.name || m)
+                        const models = await puter.ai.models.list();
+                        if (models && models.length > 0) {
+                            console.log('✅ Fetched models via SDK:', models.length);
+                            return models.map(m => ({
+                                apiName: m.id || m.name,
+                                displayName: formatModelName(m.id || m.name),
+                                shortName: getShortName(m.id || m.name)
                             }));
                         }
-                    } catch (e) {
-                        console.warn('SDK list failed:', e);
+                    } catch (sdkError) {
+                        console.warn('SDK fetch failed, trying HTTP:', sdkError);
                     }
                 }
 
-                // HTTP fallback
-                if (models.length === 0) {
-                    try {
-                        const response = await fetch('https://api.puter.com/puterai/chat/models/');
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (Array.isArray(data)) {
-                                models = data.map(m => ({
-                                    apiName: m.id || m.name || m,
-                                    displayName: formatModelName(m.id || m.name || m),
-                                    shortName: getShortName(m.id || m.name || m)
-                                }));
-                            } else if (data.models && Array.isArray(data.models)) {
-                                models = data.models.map(m => ({
-                                    apiName: m.id || m.name || m,
-                                    displayName: formatModelName(m.id || m.name || m),
-                                    shortName: getShortName(m.id || m.name || m)
-                                }));
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('HTTP fetch failed:', e);
-                    }
-                }
-
-                if (models.length > 0) {
-                    availableModels = models;
-                    localStorage.setItem(MODELS_CACHE_KEY, JSON.stringify({
-                        data: models,
-                        timestamp: Date.now()
+                // Fallback to HTTP
+                const response = await fetch('https://api.puter.com/puterai/chat/models');
+                if (!response.ok) throw new Error('HTTP fetch failed');
+                
+                const data = await response.json();
+                const modelsList = data.models || data;
+                
+                if (Array.isArray(modelsList) && modelsList.length > 0) {
+                    console.log('✅ Fetched models via HTTP:', modelsList.length);
+                    return modelsList.map(m => ({
+                        apiName: typeof m === 'string' ? m : (m.id || m.name),
+                        displayName: formatModelName(typeof m === 'string' ? m : (m.id || m.name)),
+                        shortName: getShortName(typeof m === 'string' ? m : (m.id || m.name))
                     }));
-                    console.log(`✅ Fetched ${models.length} models`);
-                } else {
-                    console.warn('⚠️ No models fetched, using defaults');
                 }
-
+                
+                throw new Error('No models in response');
             } catch (error) {
-                console.error('❌ Model fetch error:', error);
+                console.error('❌ Failed to fetch Puter models:', error);
+                return null;
             }
         }
 
-        function formatModelName(name) {
-            return name
-                .replace(/[-_]/g, ' ')
-                .split(' ')
-                .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-                .join(' ');
+        function formatModelName(apiName) {
+            if (!apiName) return 'Unknown Model';
+            return apiName
+                .replace(/-/g, ' ')
+                .replace(/\b\w/g, l => l.toUpperCase())
+                .replace(/\s+/g, ' ')
+                .trim();
         }
 
-        function getShortName(name) {
-            const parts = name.split(/[-_]/);
+        function getShortName(apiName) {
+            if (!apiName) return 'Model';
+            const parts = apiName.split('-');
             if (parts.length >= 2) {
                 return parts.slice(0, 2).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
             }
-            return formatModelName(name);
+            return apiName.charAt(0).toUpperCase() + apiName.slice(1);
+        }
+
+        function getCachedModels() {
+            try {
+                const cached = localStorage.getItem(MODELS_CACHE_KEY);
+                if (!cached) return null;
+                
+                const { models, timestamp } = JSON.parse(cached);
+                const age = Date.now() - timestamp;
+                
+                if (age < MODELS_CACHE_DURATION) {
+                    console.log('✅ Using cached models (age:', Math.round(age / 60000), 'minutes)');
+                    return models;
+                }
+                console.log('⏰ Cache expired');
+                return null;
+            } catch (e) {
+                console.warn('Cache read failed:', e);
+                return null;
+            }
+        }
+
+        function setCachedModels(models) {
+            try {
+                localStorage.setItem(MODELS_CACHE_KEY, JSON.stringify({
+                    models,
+                    timestamp: Date.now()
+                }));
+            } catch (e) {
+                console.warn('Cache write failed:', e);
+            }
+        }
+
+        async function initializeModels() {
+            let models = getCachedModels();
+            
+            if (!models) {
+                models = await fetchPuterModels();
+                if (models && models.length > 0) {
+                    setCachedModels(models);
+                } else {
+                    console.warn('⚠️ Using fallback models');
+                    models = availableModels;
+                }
+            }
+            
+            availableModels = models;
+            
+            // Validate currentModel
+            if (!availableModels.find(m => m.apiName === currentModel)) {
+                const preferredModel = availableModels.find(m => 
+                    m.apiName.includes('claude-sonnet-4.5') || 
+                    m.apiName.includes('claude-sonnet-4')
+                );
+                currentModel = preferredModel ? preferredModel.apiName : availableModels[0].apiName;
+                console.log('🔄 Reset to available model:', currentModel);
+            }
+            
+            updateModelDisplay();
+        }
+
+        // Model selection modal functions
+        function openModelModal() {
+            const modal = document.getElementById('modelModal');
+            const searchInput = document.getElementById('modelSearch');
+            modal.classList.add('active');
+            searchInput.value = '';
+            filterModels('');
+            setTimeout(() => searchInput.focus(), 100);
+        }
+
+        function closeModelModal() {
+            document.getElementById('modelModal').classList.remove('active');
+        }
+
+        function filterModels(searchTerm) {
+            const modelList = document.getElementById('modelList');
+            const term = searchTerm.toLowerCase();
+            
+            const filtered = availableModels.filter(m => 
+                m.apiName.toLowerCase().includes(term) || 
+                m.displayName.toLowerCase().includes(term)
+            );
+            
+            modelList.innerHTML = '';
+            filtered.forEach(model => {
+                const item = document.createElement('div');
+                item.className = 'model-item';
+                if (model.apiName === currentModel) {
+                    item.classList.add('selected');
+                }
+                
+                item.innerHTML = `
+                    <div class="model-item-name">${model.displayName}</div>
+                    <div class="model-item-id">${model.apiName}</div>
+                `;
+                
+                item.addEventListener('click', () => {
+                    currentModel = model.apiName;
+                    updateModelDisplay();
+                    ucSaveState();
+                    closeModelModal();
+                    console.log('🔄 Model changed to:', model.displayName);
+                });
+                
+                modelList.appendChild(item);
+            });
         }
 
         function ucSaveState() {
@@ -1145,16 +1356,8 @@
                 if (authBox) authBox.style.display = 'block';
             }
             
-            await fetchPuterModels();
-            
-            // Ensure currentModel is valid
-            if (!availableModels.find(m => m.apiName === currentModel)) {
-                currentModel = availableModels.find(m => m.apiName.includes('sonnet-4'))?.apiName || availableModels[0]?.apiName;
-            }
-            
+            await initializeModels();
             initializeInterface();
-            initFileUpload();
-            updateModelDisplay();
             updateProtocolNotice();
             ucRestoreState();
         });
@@ -1214,152 +1417,78 @@
             }
         }
 
-        function initFileUpload() {
-            const welcomeFileBtn = document.getElementById('welcomeFileBtn');
-            const welcomeFileInput = document.getElementById('welcomeFileInput');
-            const chatFileBtn = document.getElementById('chatFileBtn');
-            const chatFileInput = document.getElementById('chatFileInput');
+        // File upload handling
+        function initializeFileUpload() {
+            const uploadBtnWelcome = document.getElementById('uploadBtnWelcome');
+            const uploadBtnChat = document.getElementById('uploadBtnChat');
+            const fileInputWelcome = document.getElementById('fileInputWelcome');
+            const fileInputChat = document.getElementById('fileInputChat');
 
-            if (welcomeFileBtn && welcomeFileInput) {
-                welcomeFileBtn.addEventListener('click', () => welcomeFileInput.click());
-                welcomeFileInput.addEventListener('change', (e) => handleFileSelection(e.target.files));
+            if (uploadBtnWelcome && fileInputWelcome) {
+                uploadBtnWelcome.addEventListener('click', () => fileInputWelcome.click());
+                fileInputWelcome.addEventListener('change', (e) => handleFileSelection(e.target.files));
             }
 
-            if (chatFileBtn && chatFileInput) {
-                chatFileBtn.addEventListener('click', () => chatFileInput.click());
-                chatFileInput.addEventListener('change', (e) => handleFileSelection(e.target.files));
+            if (uploadBtnChat && fileInputChat) {
+                uploadBtnChat.addEventListener('click', () => fileInputChat.click());
+                fileInputChat.addEventListener('change', (e) => handleFileSelection(e.target.files));
             }
 
-            // Drag & drop support
+            // Drag and drop support
             [document.getElementById('welcomeInput'), document.getElementById('chatInput')].forEach(textarea => {
                 if (!textarea) return;
                 
                 textarea.addEventListener('dragover', (e) => {
                     e.preventDefault();
-                    e.stopPropagation();
                     textarea.style.borderColor = '#ff6b35';
                 });
-
+                
                 textarea.addEventListener('dragleave', (e) => {
                     e.preventDefault();
-                    e.stopPropagation();
                     textarea.style.borderColor = '#404040';
                 });
-
+                
                 textarea.addEventListener('drop', (e) => {
                     e.preventDefault();
-                    e.stopPropagation();
                     textarea.style.borderColor = '#404040';
                     if (e.dataTransfer.files.length > 0) {
                         handleFileSelection(e.dataTransfer.files);
                     }
                 });
 
+                // Paste support
                 textarea.addEventListener('paste', (e) => {
-                    if (e.clipboardData && e.clipboardData.files.length > 0) {
-                        e.preventDefault();
-                        handleFileSelection(e.clipboardData.files);
+                    const items = e.clipboardData?.items;
+                    if (items) {
+                        const files = [];
+                        for (let i = 0; i < items.length; i++) {
+                            if (items[i].kind === 'file') {
+                                files.push(items[i].getAsFile());
+                            }
+                        }
+                        if (files.length > 0) {
+                            e.preventDefault();
+                            handleFileSelection(files);
+                        }
                     }
                 });
             });
         }
 
-        function handleFileSelection(files) {
-            if (!files || files.length === 0) return;
-            pendingFiles = Array.from(files);
-            console.log(`📎 Selected ${pendingFiles.length} file(s)`);
-        }
-
-        async function buildMultimodalMessage(userText) {
-            if (pendingFiles.length === 0) {
-                return { content: userText || 'Please analyze the attached file(s) and describe key details.', files: [] };
+        async function handleFileSelection(fileList) {
+            if (!fileList || fileList.length === 0) return;
+            
+            pendingFiles = Array.from(fileList);
+            console.log('📎 Files selected:', pendingFiles.length);
+            
+            // Update UI to show file count
+            const welcomeInput = document.getElementById('welcomeInput');
+            const chatInput = document.getElementById('chatInput');
+            const activeInput = document.getElementById('chatContainer').classList.contains('active') ? chatInput : welcomeInput;
+            
+            if (activeInput && !activeInput.value.trim()) {
+                activeInput.placeholder = `📎 ${pendingFiles.length} file(s) attached - add message or press send`;
             }
-
-            const textFiles = [];
-            const imageFiles = [];
-            const binaryFiles = [];
-
-            for (const file of pendingFiles) {
-                const ext = file.name.split('.').pop().toLowerCase();
-                const isText = file.type.startsWith('text/') || 
-                              ['txt', 'md', 'csv', 'json', 'xml', 'html', 'htm', 'css', 'js'].includes(ext);
-                const isImage = file.type.startsWith('image/');
-
-                if (isText) {
-                    textFiles.push(file);
-                } else if (isImage) {
-                    imageFiles.push(file);
-                } else {
-                    binaryFiles.push(file);
-                }
-            }
-
-            let contentParts = [];
-            const uploadedPaths = [];
-
-            // Process text files (inline)
-            for (const file of textFiles) {
-                try {
-                    let text = await file.text();
-                    if (text.length > 120000) {
-                        text = text.substring(0, 120000) + '\n... (truncated)';
-                    }
-                    const ext = file.name.split('.').pop().toLowerCase();
-                    const header = `\n---\nFile: ${file.name} (${file.type || ext}, ${(file.size / 1024).toFixed(1)}KB)\n`;
-                    if (['html', 'htm'].includes(ext)) {
-                        contentParts.push(header + '```html\n' + text + '\n```\n');
-                    } else {
-                        contentParts.push(header + text + '\n');
-                    }
-                } catch (e) {
-                    console.warn(`Failed to read ${file.name}:`, e);
-                    contentParts.push(`\n[File: ${file.name} - read error]\n`);
-                }
-            }
-
-            // Upload images
-            for (const file of imageFiles) {
-                try {
-                    if (typeof puter !== 'undefined' && puter.fs && puter.fs.upload) {
-                        const uploaded = await puter.fs.upload(file);
-                        if (uploaded && uploaded.path) {
-                            uploadedPaths.push({ type: 'file', puter_path: uploaded.path });
-                            contentParts.push(`\n[Image: ${file.name} (${file.type}, ${(file.size / 1024).toFixed(1)}KB) - uploaded to ${uploaded.path}]\n`);
-                        } else {
-                            contentParts.push(`\n[Image: ${file.name} (${file.type}, ${(file.size / 1024).toFixed(1)}KB) - upload failed]\n`);
-                        }
-                    } else {
-                        contentParts.push(`\n[Image: ${file.name} (${file.type}, ${(file.size / 1024).toFixed(1)}KB) - no upload available]\n`);
-                    }
-                } catch (e) {
-                    console.warn(`Failed to upload ${file.name}:`, e);
-                    contentParts.push(`\n[Image: ${file.name} - upload error]\n`);
-                }
-            }
-
-            // Upload binary files (just metadata)
-            for (const file of binaryFiles) {
-                try {
-                    if (typeof puter !== 'undefined' && puter.fs && puter.fs.upload) {
-                        const uploaded = await puter.fs.upload(file);
-                        if (uploaded && uploaded.path) {
-                            uploadedPaths.push({ type: 'file', puter_path: uploaded.path });
-                            contentParts.push(`\n[File: ${file.name} (${file.type || 'binary'}, ${(file.size / 1024).toFixed(1)}KB) - uploaded to ${uploaded.path}]\n`);
-                        } else {
-                            contentParts.push(`\n[File: ${file.name} (${file.type || 'binary'}, ${(file.size / 1024).toFixed(1)}KB) - upload failed]\n`);
-                        }
-                    } else {
-                        contentParts.push(`\n[File: ${file.name} (${file.type || 'binary'}, ${(file.size / 1024).toFixed(1)}KB) - no upload available]\n`);
-                    }
-                } catch (e) {
-                    console.warn(`Failed to upload ${file.name}:`, e);
-                    contentParts.push(`\n[File: ${file.name} - upload error]\n`);
-                }
-            }
-
-            const finalText = (userText || 'Please analyze the attached file(s) and describe key details.') + '\n' + contentParts.join('');
-
-            return { content: finalText, files: uploadedPaths };
         }
 
         function initializeInterface() {
@@ -1373,6 +1502,8 @@
             const authButton = document.getElementById('authButton');
             const nameSubmitBtn = document.getElementById('nameSubmitBtn');
             const nameInput = document.getElementById('nameInput');
+            const modelSearch = document.getElementById('modelSearch');
+            const modelModal = document.getElementById('modelModal');
 
             if (authButton) authButton.addEventListener('click', handleManualAuth);
 
@@ -1395,6 +1526,21 @@
                             document.getElementById('nameModal').classList.remove('active');
                         }
                     }
+                });
+            }
+
+            // Model selection
+            modelSelectors.forEach(selector => {
+                if (selector) selector.addEventListener('click', openModelModal);
+            });
+
+            if (modelSearch) {
+                modelSearch.addEventListener('input', (e) => filterModels(e.target.value));
+            }
+
+            if (modelModal) {
+                modelModal.addEventListener('click', (e) => {
+                    if (e.target === modelModal) closeModelModal();
                 });
             }
 
@@ -1426,9 +1572,7 @@
                 });
             });
 
-            modelSelectors.forEach(selector => {
-                if (selector) selector.addEventListener('click', toggleModel);
-            });
+            initializeFileUpload();
 
             if (welcomeInput) welcomeInput.focus();
             console.log('✅ Interface initialized');
@@ -1437,45 +1581,28 @@
         function updateModelDisplay() {
             const model = availableModels.find(m => m.apiName === currentModel);
             if (!model) {
-                console.error("Model not found:", currentModel);
+                console.error("Model not found in available models:", currentModel);
                 return;
             }
-            const currentModelEl = document.getElementById('currentModel');
-            const chatCurrentModelEl = document.getElementById('chatCurrentModel');
-            if (currentModelEl) currentModelEl.textContent = model.displayName;
-            if (chatCurrentModelEl) chatCurrentModelEl.textContent = model.shortName;
-        }
-
-        function toggleModel() {
-            const currentIndex = availableModels.findIndex(m => m.apiName === currentModel);
-            const nextIndex = (currentIndex + 1) % availableModels.length;
-            currentModel = availableModels[nextIndex].apiName;
-            updateModelDisplay();
-            ucSaveState();
-            console.log('🔄 Model switched to:', availableModels[nextIndex].displayName);
+            document.getElementById('currentModel').textContent = model.displayName;
+            document.getElementById('chatCurrentModel').textContent = model.shortName;
         }
 
         async function handleWelcomeMessage() {
             const welcomeInput = document.getElementById('welcomeInput');
             const message = welcomeInput.value.trim();
-            if (isStreaming) return;
-            console.log('📤 Sending welcome message');
-            const hasFiles = pendingFiles.length > 0;
-            if (!message && !hasFiles) return;
-            createNewConversation(message || '📎 File attachments');
+            if ((!message && pendingFiles.length === 0) || isStreaming) return;
+            console.log('📤 Sending welcome message:', message);
+            createNewConversation(message || `📎 ${pendingFiles.length} file(s)`);
             switchToChatView();
-            welcomeInput.value = '';
-            autoResize(welcomeInput);
             await sendMessage(message);
         }
 
         async function handleChatMessage() {
             const chatInput = document.getElementById('chatInput');
             const message = chatInput.value.trim();
-            if (isStreaming) return;
-            console.log('📤 Sending chat message');
-            const hasFiles = pendingFiles.length > 0;
-            if (!message && !hasFiles) return;
+            if ((!message && pendingFiles.length === 0) || isStreaming) return;
+            console.log('📤 Sending chat message:', message);
             chatInput.value = '';
             autoResize(chatInput);
             await sendMessage(message);
@@ -1497,7 +1624,7 @@
             }
             updateRecentItems();
             ucSaveState();
-            console.log('🆕 Created new conversation:', title);
+            console.log('📁 Created new conversation:', title);
         }
 
         function updateRecentItems() {
@@ -1554,23 +1681,103 @@
             const chatContainer = document.getElementById('chatContainer');
             const chatMessages = document.getElementById('chatMessages');
             const welcomeInput = document.getElementById('welcomeInput');
-            const welcomeFileInput = document.getElementById('welcomeFileInput');
-            const chatFileInput = document.getElementById('chatFileInput');
 
             if (welcomeScreen) welcomeScreen.style.display = 'flex';
             if (chatContainer) chatContainer.classList.remove('active');
             if (chatMessages) chatMessages.innerHTML = '';
             if (welcomeInput) {
                 welcomeInput.value = '';
+                welcomeInput.placeholder = 'How can I help you today?';
                 autoResize(welcomeInput);
                 welcomeInput.focus();
             }
-            if (welcomeFileInput) welcomeFileInput.value = '';
-            if (chatFileInput) chatFileInput.value = '';
             autoResize(document.getElementById('chatInput'));
 
-            console.log('🆕 Started new chat');
+            console.log('🆕 Started new chat, model reset to default.');
             ucSaveState();
+        }
+
+        async function processFiles(files) {
+            const processed = [];
+            const textSummaries = [];
+            const imagePaths = [];
+
+            for (const file of files) {
+                const fileName = file.name;
+                const fileType = file.type;
+                const fileSize = (file.size / 1024).toFixed(2) + ' KB';
+                
+                console.log(`📄 Processing: ${fileName} (${fileType}, ${fileSize})`);
+
+                // Text files
+                if (fileType.startsWith('text/') || 
+                    fileType === 'application/json' || 
+                    fileType === 'application/xml' ||
+                    /\.(txt|md|csv|json|xml|html|htm|css|js)$/i.test(fileName)) {
+                    
+                    try {
+                        let content = await file.text();
+                        const maxLength = 120000;
+                        
+                        if (content.length > maxLength) {
+                            content = content.substring(0, maxLength) + '\n\n[Content truncated...]';
+                        }
+                        
+                        const isHTML = /\.html?$/i.test(fileName) || fileType === 'text/html';
+                        const codeBlock = isHTML ? '```html\n' + content + '\n```' : content;
+                        
+                        textSummaries.push(`\n📄 **${fileName}** (${fileType}, ${fileSize}):\n${codeBlock}`);
+                    } catch (err) {
+                        console.error('Failed to read text file:', err);
+                        textSummaries.push(`\n📄 **${fileName}** (${fileType}, ${fileSize}): [Failed to read]`);
+                    }
+                }
+                // Image files
+                else if (fileType.startsWith('image/')) {
+                    try {
+                        if (typeof puter !== 'undefined' && puter.fs && puter.fs.upload) {
+                            const uploadResult = await puter.fs.upload(file);
+                            if (uploadResult && uploadResult.path) {
+                                imagePaths.push({
+                                    type: 'file',
+                                    puter_path: uploadResult.path
+                                });
+                                textSummaries.push(`\n🖼️ **${fileName}** (${fileType}, ${fileSize}) - Uploaded to: ${uploadResult.path}`);
+                            } else {
+                                textSummaries.push(`\n🖼️ **${fileName}** (${fileType}, ${fileSize}) - [Upload returned no path]`);
+                            }
+                        } else {
+                            textSummaries.push(`\n🖼️ **${fileName}** (${fileType}, ${fileSize}) - [Puter upload not available]`);
+                        }
+                    } catch (err) {
+                        console.error('Failed to upload image:', err);
+                        textSummaries.push(`\n🖼️ **${fileName}** (${fileType}, ${fileSize}) - [Upload failed]`);
+                    }
+                }
+                // Binary files (docs, videos, audio, archives)
+                else {
+                    try {
+                        if (typeof puter !== 'undefined' && puter.fs && puter.fs.upload) {
+                            const uploadResult = await puter.fs.upload(file);
+                            if (uploadResult && uploadResult.path) {
+                                textSummaries.push(`\n📦 **${fileName}** (${fileType}, ${fileSize}) - Uploaded to: ${uploadResult.path}`);
+                            } else {
+                                textSummaries.push(`\n📦 **${fileName}** (${fileType}, ${fileSize}) - [Upload returned no path]`);
+                            }
+                        } else {
+                            textSummaries.push(`\n📦 **${fileName}** (${fileType}, ${fileSize}) - [Binary file, upload not available]`);
+                        }
+                    } catch (err) {
+                        console.error('Failed to upload binary file:', err);
+                        textSummaries.push(`\n📦 **${fileName}** (${fileType}, ${fileSize}) - [Upload failed]`);
+                    }
+                }
+            }
+
+            return {
+                textSummaries: textSummaries.join('\n'),
+                imagePaths
+            };
         }
 
         async function sendMessage(message) {
@@ -1578,133 +1785,114 @@
 
             console.log('🚀 Starting to send message...');
             
-            const { content, files } = await buildMultimodalMessage(message);
-            const displayText = pendingFiles.length > 0 
-                ? `${message || ''}\n📎 Sent ${pendingFiles.length} file(s)`
-                : message;
+            const hasFiles = pendingFiles.length > 0;
+            const userMessage = message.trim() || (hasFiles ? 'Please analyze the attached file(s) and describe key details.' : '');
             
-            addMessage(displayText, 'user');
-            pendingFiles = [];
+            let displayMessage = userMessage;
+            if (hasFiles) {
+                displayMessage = `📎 Sent ${pendingFiles.length} file(s)\n${userMessage}`;
+            }
             
-            // Clear file inputs
-            const welcomeFileInput = document.getElementById('welcomeFileInput');
-            const chatFileInput = document.getElementById('chatFileInput');
-            if (welcomeFileInput) welcomeFileInput.value = '';
-            if (chatFileInput) chatFileInput.value = '';
-            
+            addMessage(displayMessage, 'user');
             showTypingIndicator();
             setInputState(false);
 
-            chatHistory.push({ role: 'user', content: content });
+            // Process files if any
+            let fileContent = null;
+            if (hasFiles) {
+                try {
+                    isUploadingFiles = true;
+                    fileContent = await processFiles(pendingFiles);
+                } catch (err) {
+                    console.error('File processing error:', err);
+                } finally {
+                    isUploadingFiles = false;
+                    pendingFiles = [];
+                    
+                    // Reset placeholders
+                    const welcomeInput = document.getElementById('welcomeInput');
+                    const chatInput = document.getElementById('chatInput');
+                    if (welcomeInput) welcomeInput.placeholder = 'How can I help you today?';
+                    if (chatInput) chatInput.placeholder = 'Message Claude...';
+                }
+            }
+
+            // Build message content
+            let messageContent = userMessage;
+            if (fileContent && fileContent.textSummaries) {
+                messageContent = fileContent.textSummaries + '\n\n' + userMessage;
+            }
+
+            chatHistory.push({ role: 'user', content: messageContent });
 
             try {
                 isStreaming = true;
-                
-                // Check auth
-                if (typeof puter !== 'undefined' && puter.auth && typeof puter.auth.isSignedIn === 'function') {
-                    const signedIn = await puter.auth.isSignedIn();
-                    if (!signedIn) {
-                        throw new Error('Authentication required. Please sign in to Puter.');
-                    }
+                if (typeof puter === 'undefined') { 
+                    throw new Error('Puter.js is not available.'); 
                 }
-
+                
                 console.log('📡 Calling Puter AI with model:', currentModel);
 
+                // Strategy A: Try with all files
                 let response = null;
-                let strategyUsed = 'unknown';
-
-                // Strategy A: Full multimodal (files + text)
-                if (files.length > 0) {
-                    try {
-                        const multimodalHistory = [...chatHistory];
-                        multimodalHistory[multimodalHistory.length - 1] = {
-                            role: 'user',
-                            content: [
-                                { type: 'text', text: content },
-                                ...files
-                            ]
-                        };
-                        response = await puter.ai.chat(multimodalHistory, {
-                            model: currentModel,
-                            stream: true
-                        });
-                        strategyUsed = 'A (full multimodal)';
-                    } catch (e) {
-                        console.warn('Strategy A failed:', e);
-                        response = null;
-                    }
-                }
-
-                // Strategy B: Images only as files, rest as text
-                if (!response && files.length > 0) {
-                    try {
-                        const imageFiles = files.filter(f => {
-                            const path = f.puter_path || '';
-                            return /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(path);
-                        });
-                        
-                        if (imageFiles.length > 0) {
-                            const multimodalHistory = [...chatHistory];
-                            multimodalHistory[multimodalHistory.length - 1] = {
-                                role: 'user',
-                                content: [
-                                    { type: 'text', text: content },
-                                    ...imageFiles
-                                ]
-                            };
-                            response = await puter.ai.chat(multimodalHistory, {
-                                model: currentModel,
-                                stream: true
-                            });
-                            strategyUsed = 'B (images + text)';
-                        }
-                    } catch (e) {
-                        console.warn('Strategy B failed:', e);
-                        response = null;
-                    }
-                }
-
-                // Strategy C: Pure text fallback
-                if (!response) {
+                let strategyUsed = 'A';
+                
+                try {
+                    const requestPayload = fileContent && fileContent.imagePaths.length > 0 
+                        ? [...chatHistory, ...fileContent.imagePaths.map(img => ({ role: 'user', content: [img] }))]
+                        : chatHistory;
+                    
+                    response = await puter.ai.chat(requestPayload, {
+                        model: currentModel,
+                        stream: true
+                    });
+                } catch (errA) {
+                    console.warn('Strategy A failed, trying B:', errA);
+                    strategyUsed = 'B';
+                    
+                    // Strategy B: Images only
                     try {
                         response = await puter.ai.chat(chatHistory, {
                             model: currentModel,
                             stream: true
                         });
-                        strategyUsed = 'C (text only)';
-                    } catch (e) {
-                        console.error('Strategy C failed:', e);
-                        throw e;
+                    } catch (errB) {
+                        console.warn('Strategy B failed, trying C:', errB);
+                        strategyUsed = 'C';
+                        
+                        // Strategy C: Pure text only
+                        response = await puter.ai.chat(chatHistory, {
+                            model: currentModel,
+                            stream: true
+                        });
                     }
                 }
 
                 console.log('✅ Using strategy:', strategyUsed);
 
                 if (response && response.success === false) {
-                    throw new Error('Authentication required. Please click the authenticate button.');
+                    throw new Error('Authentication required. Please click the authenticate button and allow the popup.');
                 }
 
                 saveAuthStatus();
 
-                const { messageContent } = addMessage('', 'assistant');
+                const { messageContent: msgContent } = addMessage('', 'assistant');
                 hideTypingIndicator();
                 let fullResponse = '';
 
                 for await (const part of response) {
-                    let text = part?.text || part?.delta?.text || part?.content?.[0]?.text || '';
+                    // Handle multiple response formats
+                    const text = part?.text || part?.delta?.text || part?.content?.[0]?.text || '';
+                    
                     if (text) {
                         fullResponse += text;
-                        renderFormattedMessage(fullResponse, messageContent);
+                        renderFormattedMessage(fullResponse, msgContent);
                         scrollToBottom();
                     }
                 }
 
-                if (!fullResponse) {
-                    fullResponse = 'I received your message but had trouble generating a response. Please try again.';
-                    renderFormattedMessage(fullResponse, messageContent);
-                }
-
                 console.log('✅ Streaming complete.');
+                renderFormattedMessage(fullResponse, msgContent);
 
                 chatHistory.push({ role: 'assistant', content: fullResponse });
                 updateCurrentConversation();

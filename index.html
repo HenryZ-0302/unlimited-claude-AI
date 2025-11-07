@@ -310,7 +310,7 @@
             white-space: pre-wrap;
         }
         .message.assistant .message-content {
-            padding: 0; /* Remove padding for container of artifacts */
+            padding: 0;
         }
         .message-text-part {
             padding: 16px;
@@ -320,7 +320,7 @@
         .message.user .message-content {
             background-color: #ff6b35;
             color: white;
-            padding: 16px; /* Restore padding for user messages */
+            padding: 16px;
         }
 
         .typing-indicator {
@@ -393,7 +393,7 @@
 
         .search-input {
             width: 100%;
-            padding: 16px 120px 16px 16px;
+            padding: 18px 80px 18px 16px;
             background-color: #262626;
             border: 1px solid #404040;
             border-radius: 12px;
@@ -402,7 +402,7 @@
             outline: none;
             transition: border-color 0.2s;
             resize: none;
-            min-height: 50px;
+            min-height: 60px;
             max-height: 150px;
             font-family: inherit;
         }
@@ -424,22 +424,8 @@
             gap: 4px;
         }
 
-        .search-btn {
-            padding: 8px;
-            background: none;
-            border: none;
-            color: #808080;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: background-color 0.2s;
-        }
-
-        .search-btn:hover {
-            background-color: #404040;
-        }
-
         .send-btn {
-            padding: 8px;
+            padding: 10px;
             background-color: #ff6b35;
             border: none;
             color: white;
@@ -485,25 +471,27 @@
         }
 
         .action-buttons {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
             justify-content: center;
+            max-width: 500px;
         }
 
         .action-btn {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 12px 20px;
+            padding: 10px 16px;
             background-color: #262626;
             border: 1px solid #404040;
             border-radius: 8px;
             color: #e5e5e5;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
             transition: all 0.2s;
             text-decoration: none;
+            justify-content: center;
         }
 
         .action-btn:hover {
@@ -513,11 +501,11 @@
         }
 
         .action-icon {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             opacity: 0.8;
         }
-        
+
         /* Artifact Canvas Styles */
         .artifact-canvas {
             background-color: #0d0d0d;
@@ -565,7 +553,7 @@
             background-color: #404040;
             color: #fff;
         }
-        
+
         .artifact-btn.view-btn {
             border-color: #4a90e2;
             color: #4a90e2;
@@ -587,7 +575,7 @@
             scrollbar-width: thin;
             scrollbar-color: #404040 #1a1a1a;
         }
-        
+
         .artifact-code pre {
             margin: 0;
         }
@@ -599,27 +587,181 @@
             white-space: pre;
         }
 
+        /* Name input modal */
+        .name-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .name-modal.active {
+            display: flex;
+        }
+
+        .name-modal-content {
+            background: #262626;
+            border: 1px solid #404040;
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .name-modal h2 {
+            color: #fff;
+            margin-bottom: 8px;
+            font-size: 24px;
+        }
+
+        .name-modal p {
+            color: #b3b3b3;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .name-modal input {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+
+        .name-modal input:focus {
+            outline: none;
+            border-color: #ff6b35;
+        }
+
+        .name-modal button {
+            width: 100%;
+            padding: 12px;
+            background: #ff6b35;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .name-modal button:hover {
+            background: #e55a2b;
+        }
+
+        .name-modal button:disabled {
+            background: #404040;
+            cursor: not-allowed;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 width: 240px;
             }
-            
+
             .greeting {
                 font-size: 24px;
             }
-            
+
             .action-buttons {
-                flex-direction: column;
-                width: 100%;
+                grid-template-columns: 1fr;
             }
-            
-            .action-btn {
-                justify-content: center;
+        }
+    
+        /* Mobile drawer sidebar */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 86vw;
+                max-width: 320px;
+                transform: translateX(-100%);
+                transition: transform .25s ease;
+                z-index: 1001;
             }
+            .sidebar.uc-open {
+                transform: translateX(0);
+            }
+
+            .uc-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,.4);
+                display: none;
+                z-index: 1000;
+            }
+            .uc-backdrop.uc-visible {
+                display: block;
+            }
+
+            .uc-hamburger {
+                position: fixed;
+                left: 12px;
+                top: 12px;
+                z-index: 1100;
+                background: #262626;
+                color: #e5e5e5;
+                border: 1px solid #404040;
+                border-radius: 10px;
+                padding: 8px 10px;
+                cursor: pointer;
+                font-size: 20px;
+            }
+
+            .content-area {
+                padding: 16px;
+            }
+            .message-content {
+                max-width: 92%;
+            }
+            .search-container {
+                padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+            }
+        }
+
+        /* Safe area adjustments */
+        :root {
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        @supports (height: 100svh) {
+            html, body {
+                height: 100svh;
+                min-height: 100svh;
+            }
+        }
+
+        .search-container, .inputbar, .composer, .chat-input-area {
+            position: sticky;
+            bottom: 0;
+            padding-bottom: calc(12px + var(--safe-bottom));
+        }
+
+        .chat-messages, #chatMessages, .messages {
+            overscroll-behavior: contain;
         }
     </style>
 </head>
 <body>
+    <!-- Name Input Modal -->
+    <div class="name-modal" id="nameModal">
+        <div class="name-modal-content">
+            <h2>Welcome! 👋</h2>
+            <p>Please enter your name to get started</p>
+            <input type="text" id="nameInput" placeholder="Your name" maxlength="30" />
+            <button id="nameSubmitBtn">Continue</button>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar">
@@ -635,7 +777,7 @@
                     New chat
                 </button>
             </div>
-            
+
             <div class="sidebar-nav">
                 <div class="nav-item">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -656,7 +798,7 @@
                     Artifacts
                 </div>
             </div>
-            
+
             <div class="sidebar-content">
                 <div class="section-title">Recents</div>
                 <div class="recent-items" id="recentItems">
@@ -665,12 +807,12 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="sidebar-footer">
                 <div class="user-info">
-                    <div class="user-avatar">H</div>
+                    <div class="user-avatar" id="userAvatarSidebar">H</div>
                     <div class="user-details">
-                        <div class="user-name">Hassan</div>
+                        <div class="user-name" id="userNameDisplay">Hassan</div>
                         <div class="user-plan">Pro plan</div>
                     </div>
                     <svg class="chevron-down" viewBox="0 0 24 24" fill="currentColor">
@@ -679,7 +821,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Main Content -->
         <div class="main-content">
             <div class="content-area">
@@ -689,13 +831,12 @@
                         <svg class="sun-icon" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>
                         </svg>
-                        Good morning, Hassan
+                        <span id="greetingText">Good morning, Hassan</span>
                     </div>
-                    
+
                     <div class="search-container">
                         <textarea class="search-input" id="welcomeInput" placeholder="How can I help you today?" rows="1"></textarea>
                         <div class="search-actions">
-                            <button class="search-btn" id="researchBtn">Research</button>
                             <button class="send-btn" id="sendBtn">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -703,21 +844,19 @@
                             </button>
                         </div>
                     </div>
-                    
-                    <div style="max-width: 600px; margin-bottom: 15px; padding: 12px; background-color: #2a2a2a; border-radius: 8px; border: 1px solid #404040;">
+
+                    <div style="max-width: 600px; margin-bottom: 15px; padding: 12px; background-color: #2a2a2a; border-radius: 8px; border: 1px solid #404040; display: none;" id="authBox">
                         <div style="font-size: 13px; color: #b3b3b3; text-align: center; margin-bottom: 10px;">
                             💡 <strong>First time?</strong> A small popup will appear for authentication - please allow it to enable free Claude access via Puter.js
                         </div>
-                        <div style="font-size: 12px; color: #808080; text-align: center; margin-bottom: 10px;" id="protocolNotice">
-                            <!-- This will be populated by JS -->
-                        </div>
+                        <div style="font-size: 12px; color: #808080; text-align: center; margin-bottom: 10px;" id="protocolNotice"></div>
                         <div style="text-align: center;">
                             <button id="authButton" style="background-color: #ff6b35; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px;">
                                 🔐 Authenticate with Puter
                             </button>
                         </div>
                     </div>
-                    
+
                     <div class="model-selector">
                         <button class="model-btn" id="modelSelector">
                             <span id="currentModel">Claude Sonnet 4</span>
@@ -726,7 +865,7 @@
                             </svg>
                         </button>
                     </div>
-                    
+
                     <div class="action-buttons">
                         <button class="action-btn" data-prompt="Help me write">
                             <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -752,19 +891,13 @@
                             </svg>
                             Life stuff
                         </button>
-                        <button class="action-btn" data-prompt="Help me connect my apps">
-                            <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H6.99C4.79 7 3 8.79 3 11s1.79 4 4 4H11v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1H13V17h4.01c2.2 0 4-1.79 4-4s-1.8-4-4.01-4z"/>
-                            </svg>
-                            Connect apps
-                        </button>
                     </div>
                 </div>
 
                 <!-- Chat Container -->
                 <div class="chat-container" id="chatContainer">
                     <div class="chat-messages" id="chatMessages"></div>
-                    
+
                     <div class="typing-indicator" id="typingIndicator">
                         <div class="message-avatar">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -778,7 +911,7 @@
                             <div class="typing-dot"></div>
                         </div>
                     </div>
-                    
+
                     <div class="search-container">
                         <textarea class="search-input" id="chatInput" placeholder="Message Claude..." rows="1"></textarea>
                         <div class="search-actions">
@@ -809,13 +942,115 @@
         let isStreaming = false;
         let recentConversations = [];
         let currentConversationId = null;
+        let userName = '';
+        let isAuthenticated = false;
 
-        // Initialize when page loads
+        const UC_STORAGE_KEY = 'unlimitedClaude.state.v1';
+        const USER_NAME_KEY = 'unlimitedClaude.userName';
+        const AUTH_STATUS_KEY = 'unlimitedClaude.authStatus';
+
+        function ucSaveState() {
+            try {
+                const state = {
+                    recentConversations,
+                    currentConversationId,
+                    currentModel
+                };
+                localStorage.setItem(UC_STORAGE_KEY, JSON.stringify(state));
+            } catch (e) { console.warn('ucSaveState failed', e); }
+        }
+
+        function ucRestoreState() {
+            try {
+                const raw = localStorage.getItem(UC_STORAGE_KEY);
+                if (!raw) return;
+                const s = JSON.parse(raw);
+                if (Array.isArray(s.recentConversations)) recentConversations = s.recentConversations;
+                currentConversationId = s.currentConversationId || null;
+                if (s.currentModel) currentModel = s.currentModel;
+
+                updateModelDisplay?.();
+                updateRecentItems?.();
+
+                if (currentConversationId) {
+                    const conv = recentConversations.find(c => c.id === currentConversationId);
+                    if (conv) {
+                        switchToChatView?.();
+                        const chatMessagesEl = document.getElementById('chatMessages');
+                        if (chatMessagesEl) chatMessagesEl.innerHTML = '';
+                        chatHistory = [...(conv.messages || [])];
+                        (conv.messages || []).forEach(msg => addMessage(msg.content, msg.role));
+                    }
+                }
+            } catch (e) { console.warn('ucRestoreState failed', e); }
+        }
+
+        function checkUserName() {
+            const savedName = localStorage.getItem(USER_NAME_KEY);
+            if (savedName) {
+                userName = savedName;
+                updateUserDisplay();
+                return true;
+            }
+            return false;
+        }
+
+        function saveUserName(name) {
+            userName = name;
+            localStorage.setItem(USER_NAME_KEY, name);
+            updateUserDisplay();
+        }
+
+        function updateUserDisplay() {
+            const userNameEl = document.getElementById('userNameDisplay');
+            const greetingEl = document.getElementById('greetingText');
+            const avatarEl = document.getElementById('userAvatarSidebar');
+            
+            if (userNameEl) userNameEl.textContent = userName;
+            if (greetingEl) {
+                const hour = new Date().getHours();
+                let greeting = 'Good morning';
+                if (hour >= 12 && hour < 18) greeting = 'Good afternoon';
+                else if (hour >= 18) greeting = 'Good evening';
+                greetingEl.textContent = `${greeting}, ${userName}`;
+            }
+            if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
+        }
+
+        function checkAuthStatus() {
+            const authStatus = localStorage.getItem(AUTH_STATUS_KEY);
+            if (authStatus === 'true') {
+                isAuthenticated = true;
+                const authBox = document.getElementById('authBox');
+                if (authBox) authBox.style.display = 'none';
+                return true;
+            }
+            return false;
+        }
+
+        function saveAuthStatus() {
+            isAuthenticated = true;
+            localStorage.setItem(AUTH_STATUS_KEY, 'true');
+            const authBox = document.getElementById('authBox');
+            if (authBox) authBox.style.display = 'none';
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Initializing Claude interface...');
+            
+            if (!checkUserName()) {
+                document.getElementById('nameModal').classList.add('active');
+            }
+            
+            if (!checkAuthStatus()) {
+                const authBox = document.getElementById('authBox');
+                if (authBox) authBox.style.display = 'block';
+            }
+            
             initializeInterface();
             updateModelDisplay();
             updateProtocolNotice();
+            ucRestoreState();
         });
 
         function updateProtocolNotice() {
@@ -825,7 +1060,7 @@
                     protocolNotice.innerHTML = '✅ <strong>File mode:</strong> Authentication should work perfectly here!';
                     protocolNotice.style.color = '#22c55e';
                 } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    protocolNotice.innerHTML = '⚠️ <strong>Server mode:</strong> If auth fails, browser profile issues are likely. See guide below.';
+                    protocolNotice.innerHTML = '⚠️ <strong>Server mode:</strong> If auth fails, browser profile issues are likely.';
                     protocolNotice.style.color = '#f59e0b';
                 } else {
                     protocolNotice.innerHTML = '🌐 <strong>Web mode:</strong> Make sure popups are allowed for this domain.';
@@ -836,76 +1071,40 @@
 
         async function handleManualAuth() {
             const authButton = document.getElementById('authButton');
-            
+
             try {
                 if (authButton) {
                     authButton.textContent = '🔄 Authenticating...';
                     authButton.disabled = true;
                 }
-                
+
                 console.log('🔐 Manually triggering Puter authentication...');
-                
-                // Trigger authentication with a simple test call
+
                 const authResponse = await puter.ai.chat("test", {model: 'claude-sonnet-4'});
-                
+
                 console.log('✅ Raw auth response:', authResponse);
 
-                // Check for a successful response structure
                 if (authResponse && (authResponse.message?.content || authResponse.success !== false)) {
-                     console.log('✅ Authentication successful!');
+                    console.log('✅ Authentication successful!');
                     if (authButton) {
                         authButton.textContent = '✅ Authenticated';
                         authButton.style.backgroundColor = '#22c55e';
-                        setTimeout(() => {
-                           const authBox = authButton.closest('div[style*="max-width: 600px"]');
-                           if(authBox) authBox.style.display = 'none';
-                        }, 2000);
                     }
+                    saveAuthStatus();
                 } else {
                     throw new Error('Authentication response indicates failure.');
                 }
-                
+
             } catch (error) {
                 console.error('❌ Manual authentication failed:', error);
-                
+
                 if (authButton) {
-                    authButton.textContent = '❌ Auth Failed - Try Guide';
+                    authButton.textContent = '❌ Auth Failed - Try Again';
                     authButton.disabled = false;
                     authButton.style.backgroundColor = '#dc2626';
                 }
-                
-                // --- ENHANCED ERROR MESSAGE ---
-                const troubleshootGuide = `
-⚠️ AUTHENTICATION FAILED!
 
-This usually happens because of your browser profile settings (extensions, cache, etc.), NOT a bug in the code.
-
-As you noticed, it works in a new Guest or Incognito profile. Here is how to fix it in your MAIN profile:
-
---- TROUBLESHOOTING GUIDE ---
-
-✅ QUICKEST FIX (TRY FIRST):
-1.  🥷 Use Incognito/Private Mode:
-    • Press Ctrl+Shift+N (Chrome/Edge) or Ctrl+Shift+P (Firefox).
-    • Open this HTML file there. This is the fastest workaround.
-
-🔧 TO FIX YOUR MAIN PROFILE (TRY IN ORDER):
-2.  🔌 Disable Extensions:
-    • Go to your browser's extensions page (e.g., chrome://extensions).
-    • TEMPORARILY disable ALL extensions, especially ad-blockers (uBlock, AdBlock) and privacy blockers.
-    • Refresh this page and try authenticating again.
-
-3.  🧹 Clear Site Data for Puter:
-    • Go to puter.com, click the 🔒 icon in the address bar -> Site Settings/Cookies and site data -> Delete data.
-    • Refresh this page and try again.
-
-4.  🍪 Allow Third-Party Cookies:
-    • Go to your browser's cookie settings (e.g., chrome://settings/cookies).
-    • Ensure "Block third-party cookies" is NOT enabled, or add "[*.]puter.com" to the allowed list.
-
-If you are running this from a local server (like localhost), the issue is almost certainly extensions or cookie settings.
-`;
-                alert(troubleshootGuide);
+                alert('⚠️ Authentication failed!\n\nPlease try:\n1. Use Incognito/Private mode\n2. Disable browser extensions\n3. Allow popups for this site\n4. Clear site data for puter.com');
             }
         }
 
@@ -918,8 +1117,32 @@ If you are running this from a local server (like localhost), the issue is almos
             const actionBtns = document.querySelectorAll('.action-btn');
             const modelSelectors = document.querySelectorAll('#modelSelector, #chatModelSelector');
             const authButton = document.getElementById('authButton');
+            const nameSubmitBtn = document.getElementById('nameSubmitBtn');
+            const nameInput = document.getElementById('nameInput');
 
             if (authButton) authButton.addEventListener('click', handleManualAuth);
+
+            if (nameSubmitBtn) {
+                nameSubmitBtn.addEventListener('click', function() {
+                    const name = nameInput.value.trim();
+                    if (name) {
+                        saveUserName(name);
+                        document.getElementById('nameModal').classList.remove('active');
+                    }
+                });
+            }
+
+            if (nameInput) {
+                nameInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        const name = nameInput.value.trim();
+                        if (name) {
+                            saveUserName(name);
+                            document.getElementById('nameModal').classList.remove('active');
+                        }
+                    }
+                });
+            }
 
             [welcomeInput, chatInput].forEach(textarea => {
                 if (textarea) {
@@ -972,6 +1195,7 @@ If you are running this from a local server (like localhost), the issue is almos
             const nextIndex = (currentIndex + 1) % availableModels.length;
             currentModel = availableModels[nextIndex].apiName;
             updateModelDisplay();
+            ucSaveState();
             console.log('🔄 Model switched to:', availableModels[nextIndex].displayName);
         }
 
@@ -1010,6 +1234,7 @@ If you are running this from a local server (like localhost), the issue is almos
                 recentConversations = recentConversations.slice(0, 10);
             }
             updateRecentItems();
+            ucSaveState();
             console.log('📝 Created new conversation:', title);
         }
 
@@ -1058,16 +1283,15 @@ If you are running this from a local server (like localhost), the issue is almos
         function startNewChat() {
             chatHistory = [];
             currentConversationId = null;
-            
-            // --- BUG FIX: Reset model to default on new chat ---
+
             currentModel = availableModels[0].apiName;
             updateModelDisplay();
-            
+
             const welcomeScreen = document.getElementById('welcomeScreen');
             const chatContainer = document.getElementById('chatContainer');
             const chatMessages = document.getElementById('chatMessages');
             const welcomeInput = document.getElementById('welcomeInput');
-            
+
             if (welcomeScreen) welcomeScreen.style.display = 'flex';
             if (chatContainer) chatContainer.classList.remove('active');
             if (chatMessages) chatMessages.innerHTML = '';
@@ -1077,25 +1301,26 @@ If you are running this from a local server (like localhost), the issue is almos
                 welcomeInput.focus();
             }
             autoResize(document.getElementById('chatInput'));
-            
+
             console.log('🆕 Started new chat, model reset to default.');
+            ucSaveState();
         }
 
         async function sendMessage(message) {
             if (isStreaming) return;
-            
+
             console.log('🚀 Starting to send message...');
             addMessage(message, 'user');
             showTypingIndicator();
             setInputState(false);
 
             chatHistory.push({ role: 'user', content: message });
-            
+
             try {
                 isStreaming = true;
                 if (typeof puter === 'undefined') { throw new Error('Puter.js is not available.'); }
-                console.log('📡 Calling Puter AI with model:', currentModel, 'and full history.');
-                
+                console.log('📡 Calling Puter AI with model:', currentModel);
+
                 const response = await puter.ai.chat(chatHistory, {
                     model: currentModel,
                     stream: true
@@ -1104,11 +1329,13 @@ If you are running this from a local server (like localhost), the issue is almos
                 if (response && response.success === false) {
                     throw new Error('Authentication required. Please click the authenticate button and allow the popup.');
                 }
-                
+
+                saveAuthStatus();
+
                 const { messageContent } = addMessage('', 'assistant');
                 hideTypingIndicator();
                 let fullResponse = '';
-                
+
                 for await (const part of response) {
                     if (part?.text) {
                         fullResponse += part.text;
@@ -1116,20 +1343,18 @@ If you are running this from a local server (like localhost), the issue is almos
                         scrollToBottom();
                     }
                 }
-                
+
                 console.log('✅ Streaming complete.');
-                renderFormattedMessage(fullResponse, messageContent); 
-                
+                renderFormattedMessage(fullResponse, messageContent);
+
                 chatHistory.push({ role: 'assistant', content: fullResponse });
                 updateCurrentConversation();
-                
+
             } catch (error) {
                 console.error('❌ Error in sendMessage:', error);
                 hideTypingIndicator();
                 addMessage('Sorry, I encountered an error: ' + (error.message || 'Unknown error.'), 'assistant', true);
-                
-                // FIX: The API call failed, so the optimistic user message added to the history
-                // resulted in an invalid state. Remove it to allow the user to try again.
+
                 if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') {
                     chatHistory.pop();
                 }
@@ -1154,6 +1379,7 @@ If you are running this from a local server (like localhost), the issue is almos
                     updateRecentItems();
                 }
             }
+            ucSaveState();
         }
 
         function addMessage(content, role, isError = false) {
@@ -1162,29 +1388,29 @@ If you are running this from a local server (like localhost), the issue is almos
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
             messageDiv.setAttribute('data-message-id', messageId);
-            
+
             const avatar = document.createElement('div');
             avatar.className = 'message-avatar';
-            avatar.innerHTML = role === 'user' ? 'H' : `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>`;
-            
+            avatar.innerHTML = role === 'user' ? userName.charAt(0).toUpperCase() : `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>`;
+
             const messageContent = document.createElement('div');
             messageContent.className = 'message-content';
-            
+
             if (role === 'assistant') renderFormattedMessage(content, messageContent);
             else messageContent.textContent = content;
-            
+
             if (isError) messageContent.style.color = '#ff6b6b';
-            
+
             messageDiv.appendChild(avatar);
             messageDiv.appendChild(messageContent);
             chatMessages.appendChild(messageDiv);
-            
+
             scrollToBottom();
             return { messageId, messageContent };
         }
-        
+
         function renderFormattedMessage(content, container) {
-            container.innerHTML = ''; // Clear previous content
+            container.innerHTML = '';
             const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
             let lastIndex = 0;
             let match;
@@ -1203,14 +1429,14 @@ If you are running this from a local server (like localhost), the issue is almos
             }
 
             if (lastIndex < content.length) {
-                 const textPart = document.createElement('div');
+                const textPart = document.createElement('div');
                 textPart.className = 'message-text-part';
                 textPart.textContent = content.substring(lastIndex);
                 container.appendChild(textPart);
             }
-            
+
             if (container.children.length === 0 && content) {
-                 const textPart = document.createElement('div');
+                const textPart = document.createElement('div');
                 textPart.className = 'message-text-part';
                 textPart.textContent = content;
                 container.appendChild(textPart);
@@ -1223,11 +1449,11 @@ If you are running this from a local server (like localhost), the issue is almos
 
             const header = document.createElement('div');
             header.className = 'artifact-header';
-            
+
             const title = document.createElement('div');
             title.className = 'artifact-title';
             title.textContent = language ? `${language} code` : 'Code Artifact';
-            
+
             const actions = document.createElement('div');
             actions.className = 'artifact-actions';
 
@@ -1241,7 +1467,7 @@ If you are running this from a local server (like localhost), the issue is almos
                 };
                 actions.appendChild(viewBtn);
             }
-            
+
             const copyBtn = document.createElement('button');
             copyBtn.className = 'artifact-btn';
             const copyIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg> Copy`;
@@ -1329,5 +1555,80 @@ If you are running this from a local server (like localhost), the issue is almos
             textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
         }
     </script>
+
+    <script>
+    (function(){
+        function getChatList(){
+            return document.getElementById('chatMessages')
+                || document.querySelector('.chat-messages')
+                || document.querySelector('#messages')
+                || document.querySelector('.messages');
+        }
+        function scrollToBottom(smooth){
+            var el = getChatList();
+            if(!el) return;
+            try {
+                el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+            } catch(e) {
+                el.scrollTop = el.scrollHeight;
+            }
+        }
+        var list = getChatList();
+        if(list){
+            var nearBottom = function(){
+                try { return (list.scrollHeight - list.scrollTop - list.clientHeight) < 120; }
+                catch(e){ return true; }
+            };
+            var mo = new MutationObserver(function(){
+                if (nearBottom()) scrollToBottom(false);
+            });
+            mo.observe(list, { childList: true, subtree: true });
+        }
+
+        function adjustSafeArea(){
+            var input = document.querySelector('.search-container, .inputbar, .composer, .chat-input-area');
+            if(input){
+                input.style.paddingBottom = 'calc(12px + env(safe-area-inset-bottom, 0px))';
+            }
+        }
+        window.addEventListener('resize', adjustSafeArea, { passive: true });
+        document.addEventListener('DOMContentLoaded', adjustSafeArea);
+        setTimeout(adjustSafeArea, 500);
+    })();
+    </script>
+
+    <button id="ucToggleSidebar" class="uc-hamburger" aria-label="Toggle menu">☰</button>
+    <div id="ucSidebarBackdrop" class="uc-backdrop"></div>
+
+    <script>
+    (function(){
+        function setupUCDrawer(){
+            var sidebar = document.querySelector('.sidebar');
+            var btn = document.getElementById('ucToggleSidebar');
+            var backdrop = document.getElementById('ucSidebarBackdrop');
+            if(!sidebar || !btn || !backdrop) return;
+
+            var open = function(){ sidebar.classList.add('uc-open'); backdrop.classList.add('uc-visible'); };
+            var close = function(){ sidebar.classList.remove('uc-open'); backdrop.classList.remove('uc-visible'); };
+
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (sidebar.classList.contains('uc-open')) {
+                    close();
+                } else {
+                    open();
+                }
+            });
+            backdrop.addEventListener('click', close);
+            document.getElementById('chatSendBtn')?.addEventListener('click', close);
+            document.getElementById('sendBtn')?.addEventListener('click', close);
+            document.getElementById('newChatBtn')?.addEventListener('click', close);
+            document.getElementById('recentItems')?.addEventListener('click', close);
+        }
+        if (document.readyState !== 'loading') setupUCDrawer();
+        else document.addEventListener('DOMContentLoaded', setupUCDrawer);
+    })();
+    </script>
+
 </body>
 </html>
